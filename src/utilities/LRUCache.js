@@ -1,6 +1,11 @@
 // TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
 // Keep a used list that we can sort as needed when it's dirty, a map of item to last used time, and a binary search
-// of the array to find an item that needs to be removed
+// of the array to find an item that needs to be removed. Tracking the point at which items are no longer used may be
+// helpful, as well. push, splice, shift, unshift can all be slow.
+
+// Actually just us a linked list
+
+import { LinkedList } from './LinkedList.js';
 class LRUCache {
 
 	constructor() {
@@ -12,7 +17,7 @@ class LRUCache {
 
 		this.usedSet = new Set();
 		this.itemSet = new Set();
-		this.itemList = [];
+		this.itemList = new LinkedList();
 		this.callbacks = new Map();
 
 	}
@@ -62,8 +67,7 @@ class LRUCache {
 
 			callbacks.get( item )( item );
 
-			const index = itemList.indexOf( item );
-			itemList.splice( index, 1 );
+			itemList.remove( item );
 			usedSet.delete( item );
 			itemSet.delete( item );
 			callbacks.delete( item );
@@ -83,8 +87,7 @@ class LRUCache {
 		if ( itemSet.has( item ) && ! usedSet.has( item ) ) {
 
 			const itemList = this.itemList;
-			const index = itemList.indexOf( item );
-			itemList.splice( index, 1 );
+			itemList.remove( item );
 			itemList.push( item );
 			usedSet.add( item );
 
@@ -108,26 +111,25 @@ class LRUCache {
 		const itemSet = this.itemSet;
 		const usedSet = this.usedSet;
 		const callbacks = this.callbacks;
-		const unused = itemList.length - usedSet.size;
+		const unused = itemSet.size - usedSet.size;
 
-		if ( itemList.length > targetSize && unused > 0 ) {
+		if ( itemSet.size > targetSize && unused > 0 ) {
 
-			// TODO: sort by priority
+			// TODO: sort by priority?
 
-			let nodesToUnload = Math.max( itemList.length - targetSize, targetSize ) * unloadPercent;
+			let nodesToUnload = Math.max( itemSet.size - targetSize, targetSize ) * unloadPercent;
 			nodesToUnload = Math.ceil( nodesToUnload );
 			nodesToUnload = Math.min( unused, nodesToUnload );
 
-			const removedItems = itemList.splice( 0, nodesToUnload );
-			for ( let i = 0, l = removedItems.length; i < l; i ++ ) {
+			for ( let i = 0; i < nodesToUnload; i ++ ) {
 
-				const item = removedItems[ i ];
+				const item = itemList.pop();
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
 
-			}
 
+			}
 
 		}
 

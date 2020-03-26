@@ -1,3 +1,7 @@
+// TODO: time this because it uses a lot of slow inserts
+// Maybe they should just be added and sorted as needed so it only happens once
+// push, splice, shift, unshift can all be slow. Avoid where possible
+
 class PriorityQueue {
 
 	constructor( maxJobs = 6 ) {
